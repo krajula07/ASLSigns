@@ -1,0 +1,1 @@
+buy_path = r'D:\Graduation_Courses\Mobile Computing\Assignment_2\CSV\buy'
