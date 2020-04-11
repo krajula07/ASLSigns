@@ -59,25 +59,10 @@ def min_max_points(df):
     
     x = [diff_lwx, diff_lwy, diff_rwx, diff_rwy]
     
-    ret = pd.DataFrame()
-    
-    for i in x : 
-        l = len(x)
-        min_v = []
-        max_v = []
-        r = []
-        i = 0
-        while i<l:
-            m_v = fc.minimum(x[i:i+30:1])
-            mx_v = fc.maximum(x[i:i+30:1])
-            i+=30
-            min_v.append(m_v)
-            max_v.append(mx_v)
-            
-        r = np.append(min_v,max_v,axis=1) 
-        ret = pd.concat(ret, pd.DataFrame([r]), axis=1)
+    for i in x:
+        l = len(i)
         
-    return ret
+        
     
 def zero_crossings(df):
     diff_lwx = np.diff(split_leftwrist_x(df)) 
@@ -95,23 +80,22 @@ def zero_crossings(df):
 def get_features(df):
     l = zero_crossings(df)
     m_m = min_max_points(df)
-    return pd.concat(l,m_m,axis=1)
+    #return pd.concat(l,m_m,axis=1)
+    return df
 
-def main():  # use your path
+  # use your path
     #buy_all_files = glob.glob("data/buy" + "/*.csv")
-    feature_matrix = pd.DataFrame()
+feature_matrix = pd.DataFrame()
     
-    filename = r'D:\Graduation_Courses\Mobile Computing\Assignment_2\CSV\buy\BUY_1_BAKRE.csv'
-    #for filename in buy_all_files:
-    df = pd.read_csv(filename, index_col=None, header=0)
-    df_req_columns = reqcolumns(df)
-        #df_clean = dataclean(df_req_columns)
-    df_norm = universal_normalize(df_req_columns)
-    df_features = get_features(df_norm[['leftWrist_x', 'leftWrist_y', 'rightWrist_x', 'rightWrist_y']])
-    
-    
-    feature_matrix = pd.concat(feature_matrix,df_features,ignore_index=True)
-    #print(feature_matrix)
+filename = r'D:\Graduation_Courses\Mobile Computing\Assignment_2\CSV\buy\BUY_1_BAKRE.csv'
+#for filename in buy_all_files:
+df = pd.read_csv(filename, index_col=None, header=0)
+df_req_columns = reqcolumns(df)
+    #df_clean = dataclean(df_req_columns)
+df_norm = universal_normalize(df_req_columns)
 
-if __name__ == "__main__":
-    main()
+df_features = get_features(df_norm[['leftWrist_x', 'leftWrist_y', 'rightWrist_x', 'rightWrist_y']])
+    
+    
+    #feature_matrix = pd.concat(feature_matrix,df_features,ignore_index=True)
+    #print(feature_matrix)
