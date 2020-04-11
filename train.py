@@ -3,7 +3,8 @@ import numpy as np
 import glob
 import matplotlib.pyplot as plt
 from tsfresh.feature_extraction import feature_calculators as fc
-
+from decimal import Decimal as dc
+import math
 
 def reqcolumns(df):
     req_columns = ['nose_x', 'nose_y', 'leftEye_x', 'leftEye_y', 'rightEye_x', 'rightEye_y',
@@ -58,44 +59,53 @@ def min_max_points(df):
     diff_rwy = np.diff(split_rightwrist_y(df))
     
     x = [diff_lwx, diff_lwy, diff_rwx, diff_rwy]
+    min_max = []
     
     for i in x:
         l = len(i)
-        
-        
+        j = 0
+        while j<l: 
+            min1 = fc.minimum(i[j:j+math.ceil(l/3)])
+            max1 = fc.minimum(i[j:j+math.ceil(l/3)])
+            dev =  dc(max1) - dc(min1)
+            min_max.append(dev)  
+            j = j+math.ceil(l/3)
+    return pd.DataFrame(min_max).transpose()
     
 def zero_crossings(df):
-    diff_lwx = np.diff(split_leftwrist_x(df)) 
-    zc_lwx = fc.number_crossing_m(diff_lwx,0)    
+    diff_lwx = np.diff(split_leftwrist_x(df))
     diff_rwx = np.diff(split_rightwrist_x(df))
-    zc_rwx = fc.number_crossing_m(diff_rwx,0)    
-    diff_lwy = np.diff(split_leftwrist_y(df))
-    zc_lwy = fc.number_crossing_m(diff_lwy,0)    
+    diff_lwy = np.diff(split_leftwrist_y(df))  
     diff_rwy = np.diff(split_rightwrist_y(df))
-    zc_rwy = fc.number_crossing_m(diff_rwy,0)    
-    l = []
-    l = [zc_lwx, zc_rwx, zc_lwy, zc_rwy]
-    return pd.DataFrame([l])
+    
+    x = [diff_lwx, diff_lwy, diff_rwx, diff_rwy]
+    zc = []
+    for i in x:
+        l = len(i)
+        j = 0
+        while j<l:
+            zc_i = fc.number_crossing_m(i[j:j+math.ceil(l/3)],0)
+            zc.append(zc_i)
+            j = j+math.ceil(l/3)
+    return pd.DataFrame(zc).transpose()
+
 
 def get_features(df):
     l = zero_crossings(df)
     m_m = min_max_points(df)
-    #return pd.concat(l,m_m,axis=1)
-    return df
+    return pd.concat([l,m_m],axis=1)
 
   # use your path
-    #buy_all_files = glob.glob("data/buy" + "/*.csv")
+buy_all_files = glob.glob("data/buy" + "/*.csv")
 feature_matrix = pd.DataFrame()
     
-filename = r'D:\Graduation_Courses\Mobile Computing\Assignment_2\CSV\buy\BUY_1_BAKRE.csv'
-#for filename in buy_all_files:
-df = pd.read_csv(filename, index_col=None, header=0)
-df_req_columns = reqcolumns(df)
-    #df_clean = dataclean(df_req_columns)
-df_norm = universal_normalize(df_req_columns)
-
-df_features = get_features(df_norm[['leftWrist_x', 'leftWrist_y', 'rightWrist_x', 'rightWrist_y']])
+#filename = r'D:\Graduation_Courses\Mobile Computing\Assignment_2\CSV\buy\BUY_1_BAKRE.csv'
+for filename in buy_all_files:
+    df = pd.read_csv(filename, index_col=None, header=0)
+    df_req_columns = reqcolumns(df)
+    df_norm = universal_normalize(df_req_columns)
     
+    df_features = get_features(df_norm[['leftWrist_x', 'leftWrist_y', 'rightWrist_x', 'rightWrist_y']])
     
-    #feature_matrix = pd.concat(feature_matrix,df_features,ignore_index=True)
+    feature_matrix = pd.concat([feature_matrix,df_features],ignore_index=True)
     #print(feature_matrix)
