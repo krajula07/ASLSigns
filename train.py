@@ -2,9 +2,23 @@ import pandas as pd
 import numpy as np
 import glob
 import matplotlib.pyplot as plt
+import pickle
 from tsfresh.feature_extraction import feature_calculators as fc
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import KFold
 from decimal import Decimal as dc
 import math
+import scipy.fftpack as fft
+from sklearn.svm import SVC
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score,recall_score, precision_score, f1_score, classification_report
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
 def reqcolumns(df):
     req_columns = ['nose_x', 'nose_y', 'leftEye_x', 'leftEye_y', 'rightEye_x', 'rightEye_y',
@@ -39,16 +53,16 @@ def universal_normalize(df):
     return df
 
 def split_leftwrist_x(df):
-    return df.loc[:,'leftWrist_x'].to_numpy()
+    return df.loc[:,'leftWrist_x']
 
 def split_leftwrist_y(df):
-    return df.loc[:,'leftWrist_y'].to_numpy()
+    return df.loc[:,'leftWrist_y']
 
 def split_rightwrist_x(df):
-    return df.loc[:,'rightWrist_x'].to_numpy()
+    return df.loc[:,'rightWrist_x']
 
 def split_rightwrist_y(df):
-    return df.loc[:,'rightWrist_y'].to_numpy()
+    return df.loc[:,'rightWrist_y']
 
 
 
@@ -89,11 +103,100 @@ def zero_crossings(df):
             j = j+math.ceil(l/3)
     return pd.DataFrame(zc).transpose()
 
+def FastFourierTransform(df):
+    x = [split_leftwrist_x(df), split_leftwrist_y(df),split_rightwrist_x(df), split_rightwrist_y(df)]
+    fft_amp_df = pd.DataFrame()
+    for i in x:
+        fft_output = fft.rfft(i, n=5, axis=0)
+        fft_amp = np.absolute([fft_output])
+        fft_amp_df = pd.concat([fft_amp_df,pd.DataFrame(fft_amp)],axis=1)
+        
+    return fft_amp_df
+
 
 def get_features(df):
     l = zero_crossings(df)
     m_m = min_max_points(df)
-    return pd.concat([l,m_m],axis=1)
+    fft_features = FastFourierTransform(df)
+    return pd.concat([l,m_m,fft_features],axis=1)
+
+def PCA_fit(feature_matrix, dimension):
+    fm_after_ss = StandardScaler().fit_transform(feature_matrix)
+    pca = PCA(n_components=dimension)   
+    pca.fit(fm_after_ss)
+
+    fname = open("PCA.pkl", 'wb')
+    pickle.dump(pca, fname)
+    fname.close()
+    
+def DimensionalityReduction(fm,file):
+    f = open(file,'rb')
+    pca = pickle.load(f)
+    f.close()
+    return pca.transform(fm)
+
+def SupportVectorMachine(x_train,x_test,y_train,y_test):
+    print("Support Vector Machine")
+    
+    svc=SVC(kernel='linear')
+    svc.fit(x_train,y_train)
+    y_pred = svc.predict(x_test)
+    
+    filename = open("svm.pkl", 'wb')
+    pickle.dump(svc, filename)
+    filename.close()
+#    print("Confusion Matrix: ",confusion_matrix(y_test, y_pred))
+    print ("Accuracy SupportVectorMachine : ",accuracy_score(y_test,y_pred)*100)
+#    print("Report : ",classification_report(y_test, y_pred))
+    
+    return accuracy_score(y_test,y_pred)*100
+
+def Logistic_Regression(x_train,x_test,y_train,y_test):
+    print("Logistic regression")
+    
+    lr= LogisticRegression()
+    lr.fit(x_train,y_train)
+    y_pred = lr.predict(x_test)
+    
+    filename = open("lr.pkl", 'wb')
+    pickle.dump(lr, filename)
+    filename.close()
+    
+#    print("Confusion Matrix: ",confusion_matrix(y_test, y_pred))
+    print ("Accuracy Logistic_Regression: ",accuracy_score(y_test,y_pred)*100)
+#    print("Report : ",classification_report(y_test, y_pred))
+
+# Logistic_Regression()
+
+def Linear_Discriminant_Analysis(x_train,x_test,y_train,y_test):
+    print("Linear Discriminat Analysis")
+    
+    lda= LinearDiscriminantAnalysis()
+    lda.fit(x_train,y_train)
+    y_pred = lda.predict(x_test)
+    
+    filename = open("lda.pkl", 'wb')
+    pickle.dump(lda, filename)
+    filename.close()
+    
+#    print("Confusion Matrix: ",confusion_matrix(y_test, y_pred))
+    print ("Accuracy Linear_Discriminant_Analysis: ",accuracy_score(y_test,y_pred)*100)
+#    print("Report : ",classification_report(y_test, y_pred))
+
+def Quadratic_Discriminant_Analysis(x_train,x_test,y_train,y_test):
+    print("Quadratic Discriminant Analysis")
+    
+    qda= QuadraticDiscriminantAnalysis()
+    qda.fit(x_train,y_train)
+    y_pred = qda.predict(x_test)
+    
+    filename = open("lda.pkl", 'wb')
+    pickle.dump(qda, filename)
+    filename.close()
+    
+#    print("Confusion Matrix: ",confusion_matrix(y_test, y_pred))
+    print ("Accuracy Quadratic_Discriminant_Analysis: ",accuracy_score(y_test,y_pred)*100)
+#    print("Report : ",classification_report(y_test, y_pred))
 
   # use your path
 buy_all_files = glob.glob("data/buy" + "/*.csv")
@@ -109,3 +212,45 @@ for filename in buy_all_files:
     
     feature_matrix = pd.concat([feature_matrix,df_features],ignore_index=True)
     #print(feature_matrix)
+PCA_fit(feature_matrix,5)
+updated_feature_matrix_buy = DimensionalityReduction(feature_matrix, "PCA.pickle")
+r, c = updated_feature_matrix_buy.shape
+updated_feature_matrix_not_buy = updated_feature_matrix_buy - np.random.rand(r,c)
+
+updated_feature_matrix_buy = pd.DataFrame(updated_feature_matrix_buy)
+updated_feature_matrix_not_buy = pd.DataFrame(updated_feature_matrix_not_buy)
+
+updated_feature_matrix_buy['class']=1
+updated_feature_matrix_not_buy['class']=0
+
+appended_data = pd.concat([updated_feature_matrix_buy,updated_feature_matrix_not_buy])
+
+# train_data = appended_data.loc[:, appended_data.columns != 'class']
+# test_data = appended_data.loc[:,appended_data.columns == 'class']
+
+
+    
+kf = KFold(5, True, 2)
+
+for train, test in kf.split(appended_data):
+    tr_data = appended_data.iloc[train]
+    test_data = appended_data.iloc[test]
+    x_train = tr_data.loc[:, tr_data.columns != 'class']
+    y_train = tr_data['class']
+    x_test = test_data.loc[:, tr_data.columns != 'class']
+    y_test = test_data['class']    
+    Linear_Discriminant_Analysis(x_train,x_test,y_train,y_test)
+    Quadratic_Discriminant_Analysis(x_train,x_test,y_train,y_test)
+    Logistic_Regression(x_train,x_test,y_train,y_test)
+    SupportVectorMachine(x_train, x_test, y_train, y_test)
+    print('/n/n//n')
+
+
+
+
+
+
+
+
+
+    
