@@ -197,53 +197,62 @@ def Quadratic_Discriminant_Analysis(x_train,x_test,y_train,y_test):
 #    print("Confusion Matrix: ",confusion_matrix(y_test, y_pred))
     print ("Accuracy Quadratic_Discriminant_Analysis: ",accuracy_score(y_test,y_pred)*100)
 #    print("Report : ",classification_report(y_test, y_pred))
+# use your path
 
-  # use your path
-buy_all_files = glob.glob("data/buy" + "/*.csv")
-feature_matrix = pd.DataFrame()
+def train_model_sign(all_files):
+    feature_matrix = pd.DataFrame()
     
 #filename = r'D:\Graduation_Courses\Mobile Computing\Assignment_2\CSV\buy\BUY_1_BAKRE.csv'
-for filename in buy_all_files:
-    df = pd.read_csv(filename, index_col=None, header=0)
-    df_req_columns = reqcolumns(df)
-    df_norm = universal_normalize(df_req_columns)
-    
-    df_features = get_features(df_norm[['leftWrist_x', 'leftWrist_y', 'rightWrist_x', 'rightWrist_y']])
-    
-    feature_matrix = pd.concat([feature_matrix,df_features],ignore_index=True)
+    for filename in all_files:
+        df = pd.read_csv(filename, index_col=None, header=0)
+        df_req_columns = reqcolumns(df)
+        df_norm = universal_normalize(df_req_columns)
+        
+        df_features = get_features(df_norm[['leftWrist_x', 'leftWrist_y', 'rightWrist_x', 'rightWrist_y']])
+        
+        feature_matrix = pd.concat([feature_matrix,df_features],ignore_index=True)
     #print(feature_matrix)
-PCA_fit(feature_matrix,5)
-updated_feature_matrix_buy = DimensionalityReduction(feature_matrix, "PCA.pickle")
-r, c = updated_feature_matrix_buy.shape
-updated_feature_matrix_not_buy = updated_feature_matrix_buy - np.random.rand(r,c)
+    PCA_fit(feature_matrix,5)
+    updated_feature_matrix_sign = DimensionalityReduction(feature_matrix, "PCA.pickle")
+    
+    r, c = updated_feature_matrix_sign.shape
+    updated_feature_matrix_not_sign = updated_feature_matrix_sign - np.random.rand(r,c)
+        
+    updated_feature_matrix_sign = pd.DataFrame(updated_feature_matrix_sign)
+    updated_feature_matrix_not_sign= pd.DataFrame(updated_feature_matrix_not_sign)
 
-updated_feature_matrix_buy = pd.DataFrame(updated_feature_matrix_buy)
-updated_feature_matrix_not_buy = pd.DataFrame(updated_feature_matrix_not_buy)
+    updated_feature_matrix_sign['class']=1
+    updated_feature_matrix_not_sign['class']=0
 
-updated_feature_matrix_buy['class']=1
-updated_feature_matrix_not_buy['class']=0
+    appended_data = pd.concat([updated_feature_matrix_sign,updated_feature_matrix_not_sign])
 
-appended_data = pd.concat([updated_feature_matrix_buy,updated_feature_matrix_not_buy])
-
-# train_data = appended_data.loc[:, appended_data.columns != 'class']
-# test_data = appended_data.loc[:,appended_data.columns == 'class']
+    # train_data = appended_data.loc[:, appended_data.columns != 'class']
+    # test_data = appended_data.loc[:,appended_data.columns == 'class']
 
 
     
-kf = KFold(5, True, 2)
+    kf = KFold(5, True, 2)
 
-for train, test in kf.split(appended_data):
-    tr_data = appended_data.iloc[train]
-    test_data = appended_data.iloc[test]
-    x_train = tr_data.loc[:, tr_data.columns != 'class']
-    y_train = tr_data['class']
-    x_test = test_data.loc[:, tr_data.columns != 'class']
-    y_test = test_data['class']    
-    Linear_Discriminant_Analysis(x_train,x_test,y_train,y_test)
-    Quadratic_Discriminant_Analysis(x_train,x_test,y_train,y_test)
-    Logistic_Regression(x_train,x_test,y_train,y_test)
-    SupportVectorMachine(x_train, x_test, y_train, y_test)
-    print('/n/n//n')
+    for train, test in kf.split(appended_data):
+        tr_data = appended_data.iloc[train]
+        test_data = appended_data.iloc[test]
+        x_train = tr_data.loc[:, tr_data.columns != 'class']
+        y_train = tr_data['class']
+        x_test = test_data.loc[:, tr_data.columns != 'class']
+        y_test = test_data['class']    
+        Linear_Discriminant_Analysis(x_train,x_test,y_train,y_test)
+        #Quadratic_Discriminant_Analysis(x_train,x_test,y_train,y_test)
+        #Logistic_Regression(x_train,x_test,y_train,y_test)
+        #SupportVectorMachine(x_train, x_test, y_train, y_test)
+        print('\n\n')
+
+
+def main():
+    buy_all_files = glob.glob("data/buy" + "/*.csv")
+    train_model_sign(buy_all_files)
+    
+if __name__ == "__main__":
+    main()
 
 
 
