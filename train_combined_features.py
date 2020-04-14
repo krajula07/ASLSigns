@@ -22,10 +22,10 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
-#from keras.models import Sequential
-#from keras.layers import Dense
-#from keras.wrappers.scikit_learn import KerasClassifier
-#from keras.utils import np_utils
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.wrappers.scikit_learn import KerasClassifier
+from keras.utils import np_utils
 
 def reqcolumns(df):
     req_columns = ['nose_x', 'nose_y', 'leftEye_x', 'leftEye_y', 'rightEye_x', 'rightEye_y',
@@ -127,13 +127,12 @@ def get_features(df):
     fft_features = FastFourierTransform(df)
     return pd.concat([l,m_m,fft_features],axis=1)
 
-def PCA_fit(feature_matrix, dimension,sign):
+def PCA_fit(feature_matrix, dimension):
     fm_after_ss = StandardScaler().fit_transform(feature_matrix)
     pca = PCA(n_components=dimension)   
     pca.fit(fm_after_ss)
 
-    pca_file_name = sign+"_PCA.pickle"
-    fname = open(pca_file_name, 'wb')
+    fname = open("PCA.pkl", 'wb')
     pickle.dump(pca, fname)
     fname.close()
     return fm_after_ss
@@ -144,156 +143,172 @@ def DimensionalityReduction(fm,file):
     f.close()
     return pca.transform(fm)
 
-def SupportVectorMachine(x_train,x_test,y_train,y_test,sign):    
+def SupportVectorMachine(x_train,x_test,y_train,y_test):
+    print("Support Vector Machine")
+    
     svc=SVC(kernel='linear')
     svc.fit(x_train,y_train)
     y_pred = svc.predict(x_test)
     
-    model_file_name = sign+"_svm.pkl"
-    filename = open(model_file_name, 'wb')
+    filename = open("svm.pkl", 'wb')
     pickle.dump(svc, filename)
     filename.close()
 #    print("Confusion Matrix: ",confusion_matrix(y_test, y_pred))
-    print ( sign+" Accuracy SupportVectorMachine : ",accuracy_score(y_test,y_pred)*100)
+    print ("Accuracy SupportVectorMachine : ",accuracy_score(y_test,y_pred)*100)
 #    print("Report : ",classification_report(y_test, y_pred))
     
     return accuracy_score(y_test,y_pred)*100
 
-def Logistic_Regression(x_train,x_test,y_train,y_test,sign):
+def Logistic_Regression(x_train,x_test,y_train,y_test):
+    print("Logistic regression")
+    
     lr= LogisticRegression()
     lr.fit(x_train,y_train)
     y_pred = lr.predict(x_test)
-    model_file_name = sign+"_lr.pkl"
-    filename = open(model_file_name, 'wb')
+    
+    filename = open("lr.pkl", 'wb')
     pickle.dump(lr, filename)
     filename.close()
     
 #    print("Confusion Matrix: ",confusion_matrix(y_test, y_pred))
-    print ( sign+" Accuracy Logistic_Regression: ",accuracy_score(y_test,y_pred)*100)
+    print ("Accuracy Logistic_Regression: ",accuracy_score(y_test,y_pred)*100)
 #    print("Report : ",classification_report(y_test, y_pred))
 
 # Logistic_Regression()
 
-def Linear_Discriminant_Analysis(x_train,x_test,y_train,y_test,sign):
+def Linear_Discriminant_Analysis(x_train,x_test,y_train,y_test):
+    print("Linear Discriminat Analysis")
+    
     lda= LinearDiscriminantAnalysis()
     lda.fit(x_train,y_train)
     y_pred = lda.predict(x_test)
-    model_file_name = sign+"_lda.pkl"
-    filename = open(model_file_name, 'wb')
+    
+    filename = open("lda.pkl", 'wb')
     pickle.dump(lda, filename)
     filename.close()
     
 #    print(y_pred)
     
 #    print("Confusion Matrix: ",confusion_matrix(y_test, y_pred))
-    print ( sign+" Accuracy Linear_Discriminant_Analysis: ",accuracy_score(y_test,y_pred)*100)
+    print ("Accuracy Linear_Discriminant_Analysis: ",accuracy_score(y_test,y_pred)*100)
 #    print("Report : ",classification_report(y_test, y_pred))
     
     
-def RandomForest(x_train,x_test,y_train,y_test,sign):
+def RandomForest(x_train,x_test,y_train,y_test):
+    print("Random Forest")
+    
     rf = RandomForestClassifier(n_estimators=70, oob_score=True, n_jobs=-1, random_state=101, max_features=None)
     rf.fit(x_train, y_train)
+    
     y_pred = rf.predict(x_test)
-    model_file_name = sign+"_random_forest.pkl"
-    filename = open(model_file_name, 'wb')
+    
+    filename = open("random_forest.pkl", 'wb')
     pickle.dump(rf, filename)
     filename.close()
     
 #    print("Confusion Matrix: ",confusion_matrix(y_test, y_pred))
-    print ( sign+" Accuracy Random Forest : ",accuracy_score(y_test,y_pred)*100)
+    print ("Accuracy : ",accuracy_score(y_test,y_pred)*100)
 #    print("Report : ",classification_report(y_test, y_pred))
     
-def GradientBoostClassifier(x_train,x_test,y_train,y_test,sign):
+def GradientBoostClassifier(x_train,x_test,y_train,y_test):
     gbc = GradientBoostingClassifier(n_estimators=1000)
     gbc.fit(x_train , y_train)
     y_pred = gbc.predict(x_test)
-    model_file_name = sign+"_gradientboost.pkl"
-    filename = open(model_file_name, 'wb')
+    
+    filename = open("gradientboost.pkl", 'wb')
     pickle.dump(gbc, filename)
     filename.close()
     
 #    print("Confusion Matrix: ",confusion_matrix(y_test, y_pred))
-    print ( sign+" Accuracy Gradient Boost Classifier: ",accuracy_score(y_test,y_pred)*100)
+    print ("Accuracy : ",accuracy_score(y_test,y_pred)*100)
 #    print("Report : ",classification_report(y_test, y_pred))
 
-def AdaBoost(x_train,x_test,y_train,y_test,sign):
+def AdaBoost(x_train,x_test,y_train,y_test):
     abc = AdaBoostClassifier()
     abc.fit(x_train , y_train)
     y_pred = abc.predict(x_test)
-    model_file_name = sign+"_adaboost.pkl"
-    filename = open(model_file_name, 'wb')
+    
+    filename = open("adaboost.pkl", 'wb')
     pickle.dump(abc, filename)
     filename.close()
     
 #    print("Confusion Matrix: ",confusion_matrix(y_test, y_pred))
-    print ( sign+" Accuracy AdaBoost Classifier: ",accuracy_score(y_test,y_pred)*100)
+    print ("Accuracy : ",accuracy_score(y_test,y_pred)*100)
 #    print("Report : ",classification_report(y_test, y_pred))
 
-def Decision_tree(x_train,x_test,y_train,y_test,sign):
+def Decision_tree(x_train,x_test,y_train,y_test):
+    print("Decision Tree")
+    
     dtree = DecisionTreeClassifier(max_depth=10,min_samples_leaf=10)
     dtree.fit(x_train, y_train)
     y_pred = dtree.predict(x_test)
-    model_file_name = sign+"_decision_tree.pkl"   
-    filename = open(model_file_name, 'wb')
+    
+    filename = open("decision_tree.pkl", 'wb')
     pickle.dump(dtree, filename)
     filename.close()
     
 #  print("Confusion Matrix: ",confusion_matrix(y_test, y_pred))
-    print ( sign+" Accuracy Decision Tree: ",accuracy_score(y_test,y_pred)*100)
+    print ("Accuracy : ",accuracy_score(y_test,y_pred)*100)
 #   print("Report : ",classification_report(y_test, y_pred))
 
-def KNN(x_train,x_test,y_train,y_test,sign):
+def KNN(x_train,x_test,y_train,y_test):
+    print("K Nearest Neighbours")
+    
     knn=KNeighborsClassifier(algorithm='auto', leaf_size=10, n_neighbors=4, p=2,weights='uniform')
     knn.fit(x_train,y_train)
     y_pred = knn.predict(x_test)
-    model_file_name = sign+"_knn.pkl"
-    filename = open(model_file_name, 'wb')
+    
+    filename = open("knn.pkl", 'wb')
     pickle.dump(knn, filename)      
     filename.close()
     
 #    print("Confusion Matrix: ",confusion_matrix(y_test, y_pred))
-    print ( sign+" Accuracy : ",accuracy_score(y_test,y_pred)*100)
+    print ("Accuracy : ",accuracy_score(y_test,y_pred)*100)
 #    print("Report : ",classification_report(y_test, y_pred))
 
-def Quadratic_Discriminant_Analysis(x_train,x_test,y_train,y_test,sign):
+def Quadratic_Discriminant_Analysis(x_train,x_test,y_train,y_test):
+    print("Quadratic Discriminant Analysis")
+    
     qda= QuadraticDiscriminantAnalysis()
     qda.fit(x_train,y_train)
     y_pred = qda.predict(x_test)
-    model_file_name = sign+"_qda.pkl"
-    filename = open(model_file_name, 'wb')
+    
+    filename = open("lda.pkl", 'wb')
     pickle.dump(qda, filename)
     filename.close()
     
 #    print("Confusion Matrix: ",confusion_matrix(y_test, y_pred))
-    print ( sign+" Accuracy Quadratic_Discriminant_Analysis: ",accuracy_score(y_test,y_pred)*100)
+    print ("Accuracy Quadratic_Discriminant_Analysis: ",accuracy_score(y_test,y_pred)*100)
 #    print("Report : ",classification_report(y_test, y_pred))
     
-def NaiveBayes_Classifier(x_train,x_test,y_train,y_test,sign):
+def NaiveBayes_Classifier(x_train,x_test,y_train,y_test):
+    print("Naive Bayes Classifier")
+
     nbc = GaussianNB()
     nbc.fit(x_train,y_train)
     y_pred = nbc.predict(x_test)
-    model_file_name = sign+"_nbc.pkl"
-    filename = open(model_file_name, 'wb')
+    
+    filename = open("nbc.pkl", 'wb')
     pickle.dump(nbc,filename)
     filename.close()
     
-    print ( sign+" Accuracy Naive Bayes Classifier: ",accuracy_score(y_test,y_pred)*100)
+    print ("Accuracy Naive Bayes Classifier: ",accuracy_score(y_test,y_pred)*100)
     
 
-#def baseline_model():
-#	# create model
-#	model = Sequential()
-#	model.add(Dense(8, input_dim=5, activation='relu'))
-#	model.add(Dense(6, activation='softmax'))
-#	# Compile model
-#	model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-#	return model
-#    
-#def neural_networks():
-#    estimator = KerasClassifier(build_fn=baseline_model, epochs=200, batch_size=5, verbose=0)
-#    kfold = KFold(n_splits=10, shuffle=True)
-#    results = cross_val_score(estimator, X, dummy_y, cv=kfold)
-#    print("Baseline: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
+def baseline_model():
+	# create model
+	model = Sequential()
+	model.add(Dense(8, input_dim=5, activation='relu'))
+	model.add(Dense(6, activation='softmax'))
+	# Compile model
+	model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+	return model
+    
+def neural_networks():
+    estimator = KerasClassifier(build_fn=baseline_model, epochs=200, batch_size=5, verbose=0)
+    kfold = KFold(n_splits=10, shuffle=True)
+    results = cross_val_score(estimator, X, dummy_y, cv=kfold)
+    print("Baseline: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
 
 # use your path
 
@@ -361,50 +376,60 @@ def get_features_with_class_labels(sign,sign_num):
 def main():
     signs = ["buy","mother","communicate","really","hope","fun"]
     sign_num = 1
-    feature_matrix = pd.DataFrame()
+    complete_feature_matrix = pd.DataFrame()
     
     for i in signs:
-        feature_matrix = get_features_with_class_labels(i, sign_num)
+        complete_feature_matrix = pd.concat([complete_feature_matrix,get_features_with_class_labels(i, sign_num)],ignore_index=True)
         sign_num = sign_num+1
-        fm_after_normalization = PCA_fit(feature_matrix.loc[:,feature_matrix.columns!='class'],5,i)
-        updated_feature_matrix = DimensionalityReduction(fm_after_normalization,i+"_PCA.pickle")
     
-        r, c = updated_feature_matrix.shape
-        updated_feature_matrix_not_sign =  updated_feature_matrix - np.random.rand(r,c)
-        
-        updated_feature_matrix = pd.DataFrame(updated_feature_matrix)
-        updated_feature_matrix['class'] = feature_matrix['class'] 
-        
-        updated_feature_matrix_not_sign = pd.DataFrame(updated_feature_matrix_not_sign).loc[:,:]
-        updated_feature_matrix_not_sign['class'] = 0
-        
-        appended_data = pd.concat([updated_feature_matrix,updated_feature_matrix_not_sign])
-    #    appended_data = updated_feature_matrix
-    #    print(appended_data)
-        
-            
-        kf = KFold(5, True, 2)
+    fm_after_normalization = PCA_fit(complete_feature_matrix.loc[:,complete_feature_matrix.columns!='class'],5)
+    updated_complete_feature_matrix = DimensionalityReduction(fm_after_normalization,"PCA.pickle")
     
-        for train, test in kf.split(appended_data):
-            tr_data = appended_data.iloc[train]
-            test_data = appended_data.iloc[test]
-            x_train = tr_data.loc[:, tr_data.columns != 'class']
-            y_train = tr_data['class']
-            x_test = test_data.loc[:, tr_data.columns != 'class']
-            y_test = test_data['class']    
-            Linear_Discriminant_Analysis(x_train,x_test,y_train,y_test,i)
-#            Quadratic_Discriminant_Analysis(x_train,x_test,y_train,y_test,i)
-#            Logistic_Regression(x_train,x_test,y_train,y_test,i)
-#            SupportVectorMachine(x_train, x_test, y_train, y_test,i)
-#            GradientBoostClassifier(x_train,x_test,y_train,y_test,i)
-#            KNN(x_train,x_test,y_train,y_test,i)
-#            Decision_tree(x_train,x_test,y_train,y_test,i)
-#            GradientBoostClassifier(x_train,x_test,y_train,y_test,i)
-#            AdaBoost(x_train,x_test,y_train,y_test,i)
-#            RandomForest(x_train,x_test,y_train,y_test,i)
-#            NaiveBayes_Classifier(x_train,x_test,y_train,y_test,i)
+    r, c = updated_complete_feature_matrix.shape
+#   updated_complete_feature_matrix_not_sign =  updated_complete_feature_matrix - np.random.rand(r,c)
     
-    print('\n\n')
+    updated_complete_feature_matrix = pd.DataFrame(updated_complete_feature_matrix)
+    updated_complete_feature_matrix['class'] = complete_feature_matrix['class'] 
+    
+#    updated_complete_feature_matrix_not_sign = pd.DataFrame(updated_complete_feature_matrix_not_sign)
+#    updated_complete_feature_matrix_not_sign['class'] = 0
+    
+#    appended_data = pd.concat([updated_complete_feature_matrix,updated_complete_feature_matrix_not_sign])
+    appended_data = updated_complete_feature_matrix
+#    print(appended_data)
+    
+        
+    kf = KFold(5, True, 2)
+
+    for train, test in kf.split(appended_data):
+        tr_data = appended_data.iloc[train]
+        test_data = appended_data.iloc[test]
+        x_train = tr_data.loc[:, tr_data.columns != 'class']
+        y_train = tr_data['class']
+        x_test = test_data.loc[:, tr_data.columns != 'class']
+        y_test = test_data['class']    
+#        Linear_Discriminant_Analysis(x_train,x_test,y_train,y_test)
+#        print('\n\n')
+#        Quadratic_Discriminant_Analysis(x_train,x_test,y_train,y_test)
+#        print('\n\n')
+#        Logistic_Regression(x_train,x_test,y_train,y_test)
+#        print('\n\n')
+#        SupportVectorMachine(x_train, x_test, y_train, y_test)
+#        print('\n\n')
+#        GradientBoostClassifier(x_train,x_test,y_train,y_test)
+#        print('\n\n')
+#        KNN(x_train,x_test,y_train,y_test)
+#        print('\n\n')
+#        Decision_tree(x_train,x_test,y_train,y_test)
+#        print('\n\n')
+#        GradientBoostClassifier(x_train,x_test,y_train,y_test)
+#        print('\n\n')
+#        AdaBoost(x_train,x_test,y_train,y_test)
+#        print('\n\n')
+#        RandomForest(x_train,x_test,y_train,y_test)
+#        print('\n')
+        NaiveBayes_Classifier(x_train,x_test,y_train,y_test)
+        print('\n')
     
 if __name__ == "__main__":
     main()
