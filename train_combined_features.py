@@ -297,14 +297,18 @@ def NaiveBayes_Classifier(x_train,x_test,y_train,y_test):
     
     print ("Accuracy Naive Bayes Classifier: ",accuracy_score(y_test,y_pred)*100)
     
+def features_get(df):
+    df_req_columns = reqcolumns(df)
+    df_norm = universal_normalize(df_req_columns)
+    df_features = get_features(df_norm) 
+    return df_features   
+    
 def get_features_with_class_labels(sign,sign_num):
     all_files = glob.glob("data/"+sign+"/*.csv")
     feature_matrix = pd.DataFrame()
     for filename in all_files:
         df = pd.read_csv(filename, index_col=None, header=0)
-        df_req_columns = reqcolumns(df)
-        df_norm = universal_normalize(df_req_columns)
-        df_features = get_features(df_norm) 
+        df_features = features_get(df) 
         feature_matrix = pd.concat([feature_matrix,df_features],ignore_index=True)
     
     feature_matrix['class'] = sign_num
