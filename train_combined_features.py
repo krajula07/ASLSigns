@@ -22,10 +22,10 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.wrappers.scikit_learn import KerasClassifier
-from keras.utils import np_utils
+#from keras.models import Sequential
+#from keras.layers import Dense
+#from keras.wrappers.scikit_learn import KerasClassifier
+#from keras.utils import np_utils
 
 def reqcolumns(df):
     req_columns = ['nose_x', 'nose_y', 'leftEye_x', 'leftEye_y', 'rightEye_x', 'rightEye_y',
@@ -120,12 +120,52 @@ def FastFourierTransform(df):
         
     return fft_amp_df
 
-
+def DistanceFromNose(df):
+    n_x = pd.DataFrame(df.loc[:,'nose_x'])
+    n_y = pd.DataFrame(df.loc[:,'nose_y'])
+    
+    l_x = len(n_x)
+    l_y = len(n_y)
+    
+    n_m_x = n_x.mean()[0]
+    n_m_y = n_y.mean()[0]
+    
+    n_x = abs((df.loc[:,'nose_x']- n_m_x)/l_x)
+    n_y = abs((df.loc[:,'nose_y']- n_m_y)/l_y)
+    
+#    print(n_x)
+#    print("asdsadas")
+#    print(n_y)
+    x = [split_leftwrist_x(df), split_leftwrist_y(df),split_rightwrist_x(df), split_rightwrist_y(df)]
+    
+    distance_from_nose = []
+#    jx = pd.DataFrame()
+    
+    for i in x:
+        l = len(i)
+        j = 0
+        while j<l: 
+            window_length = math.ceil(l/3)
+            k = 0
+            d = 0
+            while(k<math.ceil(l/3)):
+                d = d + i[k]-n_x[k]
+                k = k+1 
+            d = d/window_length
+            distance_from_nose.append(d)  
+            j = j+math.ceil(l/3)
+     
+        
+#    return jx    
+    return pd.DataFrame(distance_from_nose).transpose()
+        
+    
 def get_features(df):
     l = zero_crossings(df)
     m_m = min_max_points(df)
     fft_features = FastFourierTransform(df)
-    return pd.concat([l,m_m,fft_features],axis=1)
+    distance_From_nose = DistanceFromNose(df)
+    return pd.concat([l,m_m,fft_features,distance_From_nose],axis=1)
 
 def PCA_fit(feature_matrix, dimension):
     fm_after_ss = StandardScaler().fit_transform(feature_matrix)
@@ -205,7 +245,6 @@ def RandomForest(x_train,x_test,y_train,y_test):
     filename = open("random_forest.pkl", 'wb')
     pickle.dump(rf, filename)
     filename.close()
-    
 #    print("Confusion Matrix: ",confusion_matrix(y_test, y_pred))
     print ("Accuracy : ",accuracy_score(y_test,y_pred)*100)
 #    print("Report : ",classification_report(y_test, y_pred))
@@ -294,7 +333,7 @@ def NaiveBayes_Classifier(x_train,x_test,y_train,y_test):
     
     print ("Accuracy Naive Bayes Classifier: ",accuracy_score(y_test,y_pred)*100)
     
-
+'''
 def baseline_model():
 	# create model
 	model = Sequential()
@@ -309,7 +348,7 @@ def neural_networks():
     kfold = KFold(n_splits=10, shuffle=True)
     results = cross_val_score(estimator, X, dummy_y, cv=kfold)
     print("Baseline: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
-
+'''
 # use your path
 
 '''
@@ -367,7 +406,7 @@ def get_features_with_class_labels(sign,sign_num):
         df = pd.read_csv(filename, index_col=None, header=0)
         df_req_columns = reqcolumns(df)
         df_norm = universal_normalize(df_req_columns)
-        df_features = get_features(df_norm[['leftWrist_x', 'leftWrist_y', 'rightWrist_x', 'rightWrist_y']]) 
+        df_features = get_features(df_norm) 
         feature_matrix = pd.concat([feature_matrix,df_features],ignore_index=True)
     
     feature_matrix['class'] = sign_num
@@ -382,13 +421,13 @@ def main():
         complete_feature_matrix = pd.concat([complete_feature_matrix,get_features_with_class_labels(i, sign_num)],ignore_index=True)
         sign_num = sign_num+1
     
-    fm_after_normalization = PCA_fit(complete_feature_matrix.loc[:,complete_feature_matrix.columns!='class'],5)
-    updated_complete_feature_matrix = DimensionalityReduction(fm_after_normalization,"PCA.pickle")
+    #fm_after_normalization = PCA_fit(complete_feature_matrix.loc[:,complete_feature_matrix.columns!='class'],5)
+    #updated_complete_feature_matrix = DimensionalityReduction(fm_after_normalization,"PCA.pickle")
     
-    r, c = updated_complete_feature_matrix.shape
+    r, c = complete_feature_matrix.shape
 #   updated_complete_feature_matrix_not_sign =  updated_complete_feature_matrix - np.random.rand(r,c)
     
-    updated_complete_feature_matrix = pd.DataFrame(updated_complete_feature_matrix)
+    updated_complete_feature_matrix = pd.DataFrame(complete_feature_matrix)
     updated_complete_feature_matrix['class'] = complete_feature_matrix['class'] 
     
 #    updated_complete_feature_matrix_not_sign = pd.DataFrame(updated_complete_feature_matrix_not_sign)
@@ -398,7 +437,7 @@ def main():
     appended_data = updated_complete_feature_matrix
 #    print(appended_data)
     
-        
+#        
     kf = KFold(5, True, 2)
 
     for train, test in kf.split(appended_data):
@@ -408,15 +447,13 @@ def main():
         y_train = tr_data['class']
         x_test = test_data.loc[:, tr_data.columns != 'class']
         y_test = test_data['class']    
-#        Linear_Discriminant_Analysis(x_train,x_test,y_train,y_test)
-#        print('\n\n')
+        Linear_Discriminant_Analysis(x_train,x_test,y_train,y_test)
+        print('\n\n')
 #        Quadratic_Discriminant_Analysis(x_train,x_test,y_train,y_test)
 #        print('\n\n')
 #        Logistic_Regression(x_train,x_test,y_train,y_test)
 #        print('\n\n')
 #        SupportVectorMachine(x_train, x_test, y_train, y_test)
-#        print('\n\n')
-#        GradientBoostClassifier(x_train,x_test,y_train,y_test)
 #        print('\n\n')
 #        KNN(x_train,x_test,y_train,y_test)
 #        print('\n\n')
@@ -428,8 +465,8 @@ def main():
 #        print('\n\n')
 #        RandomForest(x_train,x_test,y_train,y_test)
 #        print('\n')
-        NaiveBayes_Classifier(x_train,x_test,y_train,y_test)
-        print('\n')
+#        NaiveBayes_Classifier(x_train,x_test,y_train,y_test)
+#        print('\n')
     
 if __name__ == "__main__":
     main()
