@@ -34,24 +34,6 @@ def reqcolumns(df):
                    'leftWrist_x', 'leftWrist_y', 'rightWrist_x', 'rightWrist_y']
     return df[req_columns]
 
-
-'''
-def dataclean(df):
-    count = df.isna().sum(axis=1)
-    print(count)
-    l = len(df)
-    my_list = []
-    for i in range(l):
-        if(count[i] > 0.15*l):
-            my_list.append(i)      
-    
-    df.drop(my_list, inplace=True)
-    df.reset_index(drop=True, inplace=True)
-    df.interpolate(method='linear',inplace=True,axis=1)
-#        df.interpolate(method='quadratic',order=2, inplace=True)
-    df.ffill(inplace=True)
-    df.bfill(inplace=True)
-'''
 def universal_normalize(df):
     df.loc[:,'leftWrist_x'] = abs((df.loc[:,'leftWrist_x']-df.loc[:,'nose_x'])/(df.loc[:,'leftEye_x']-df.loc[:,'rightEye_x']))
     df.loc[:,'rightWrist_x'] = abs((df.loc[:,'rightWrist_x']-df.loc[:,'nose_x'])/(df.loc[:,'leftEye_x']-df.loc[:,'rightEye_x']))
@@ -70,8 +52,6 @@ def split_rightwrist_x(df):
 
 def split_rightwrist_y(df):
     return df.loc[:,'rightWrist_y']
-
-
 
 def min_max_points(df):
     diff_lwx = np.diff(split_leftwrist_x(df))
@@ -133,14 +113,8 @@ def DistanceFromNose(df):
     n_x = abs((df.loc[:,'nose_x']- n_m_x)/l_x)
     n_y = abs((df.loc[:,'nose_y']- n_m_y)/l_y)
     
-#    print(n_x)
-#    print("asdsadas")
-#    print(n_y)
-    x = [split_leftwrist_x(df), split_leftwrist_y(df),split_rightwrist_x(df), split_rightwrist_y(df)]
-    
-    distance_from_nose = []
-#    jx = pd.DataFrame()
-    
+    x = [split_leftwrist_x(df), split_leftwrist_y(df),split_rightwrist_x(df), split_rightwrist_y(df)]   
+    distance_from_nose = []   
     for i in x:
         l = len(i)
         j = 0
@@ -154,12 +128,9 @@ def DistanceFromNose(df):
             d = d/window_length
             distance_from_nose.append(d)  
             j = j+math.ceil(l/3)
-     
-        
 #    return jx    
     return pd.DataFrame(distance_from_nose).transpose()
-        
-    
+          
 def get_features(df):
     l = zero_crossings(df)
     m_m = min_max_points(df)
@@ -172,7 +143,7 @@ def PCA_fit(feature_matrix, dimension):
     pca = PCA(n_components=dimension)   
     pca.fit(fm_after_ss)
 
-    fname = open("PCA.pkl", 'wb')
+    fname = open("PCA.pickle", 'wb')
     pickle.dump(pca, fname)
     fname.close()
     return fm_after_ss
@@ -195,8 +166,7 @@ def SupportVectorMachine(x_train,x_test,y_train,y_test):
     filename.close()
 #    print("Confusion Matrix: ",confusion_matrix(y_test, y_pred))
     print ("Accuracy SupportVectorMachine : ",accuracy_score(y_test,y_pred)*100)
-#    print("Report : ",classification_report(y_test, y_pred))
-    
+#    print("Report : ",classification_report(y_test, y_pred))  
     return accuracy_score(y_test,y_pred)*100
 
 def Logistic_Regression(x_train,x_test,y_train,y_test):
@@ -214,8 +184,6 @@ def Logistic_Regression(x_train,x_test,y_train,y_test):
     print ("Accuracy Logistic_Regression: ",accuracy_score(y_test,y_pred)*100)
 #    print("Report : ",classification_report(y_test, y_pred))
 
-# Logistic_Regression()
-
 def Linear_Discriminant_Analysis(x_train,x_test,y_train,y_test):
     print("Linear Discriminat Analysis")
     
@@ -226,14 +194,10 @@ def Linear_Discriminant_Analysis(x_train,x_test,y_train,y_test):
     filename = open("lda.pkl", 'wb')
     pickle.dump(lda, filename)
     filename.close()
-    
-#    print(y_pred)
-    
-#    print("Confusion Matrix: ",confusion_matrix(y_test, y_pred))
+
     print ("Accuracy Linear_Discriminant_Analysis: ",accuracy_score(y_test,y_pred)*100)
 #    print("Report : ",classification_report(y_test, y_pred))
-    
-    
+        
 def RandomForest(x_train,x_test,y_train,y_test):
     print("Random Forest")
     
@@ -333,72 +297,6 @@ def NaiveBayes_Classifier(x_train,x_test,y_train,y_test):
     
     print ("Accuracy Naive Bayes Classifier: ",accuracy_score(y_test,y_pred)*100)
     
-'''
-def baseline_model():
-	# create model
-	model = Sequential()
-	model.add(Dense(8, input_dim=5, activation='relu'))
-	model.add(Dense(6, activation='softmax'))
-	# Compile model
-	model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-	return model
-    
-def neural_networks():
-    estimator = KerasClassifier(build_fn=baseline_model, epochs=200, batch_size=5, verbose=0)
-    kfold = KFold(n_splits=10, shuffle=True)
-    results = cross_val_score(estimator, X, dummy_y, cv=kfold)
-    print("Baseline: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
-'''
-# use your path
-
-'''
-def train_model_sign(all_files, sign):
-    feature_matrix = pd.DataFrame()
-    
-#filename = r'D:\Graduation_Courses\Mobile Computing\Assignment_2\CSV\buy\BUY_1_BAKRE.csv'
-    for filename in all_files:
-        df = pd.read_csv(filename, index_col=None, header=0)
-        df_req_columns = reqcolumns(df)
-        df_norm = universal_normalize(df_req_columns)
-        
-        df_features = get_features(df_norm[['leftWrist_x', 'leftWrist_y', 'rightWrist_x', 'rightWrist_y']])
-        
-        feature_matrix = pd.concat([feature_matrix,df_features],ignore_index=True)
-    #print(feature_matrix)
-    PCA_fit(feature_matrix,5)
-    updated_feature_matrix_sign = DimensionalityReduction(feature_matrix, sign_+"PCA.pickle")
-    
-    r, c = updated_feature_matrix_sign.shape
-    updated_feature_matrix_not_sign = updated_feature_matrix_sign - np.random.rand(r,c)
-        
-    updated_feature_matrix_sign = pd.DataFrame(updated_feature_matrix_sign)
-    updated_feature_matrix_not_sign= pd.DataFrame(updated_feature_matrix_not_sign)
-
-    updated_feature_matrix_sign['class']=1
-    updated_feature_matrix_not_sign['class']=0
-
-    appended_data = pd.concat([updated_feature_matrix_sign,updated_feature_matrix_not_sign])
-
-    # train_data = appended_data.loc[:, appended_data.columns != 'class']
-    # test_data = appended_data.loc[:,appended_data.columns == 'class']
-
-
-    
-    kf = KFold(5, True, 2)
-
-    for train, test in kf.split(appended_data):
-        tr_data = appended_data.iloc[train]
-        test_data = appended_data.iloc[test]
-        x_train = tr_data.loc[:, tr_data.columns != 'class']
-        y_train = tr_data['class']
-        x_test = test_data.loc[:, tr_data.columns != 'class']
-        y_test = test_data['class']    
-        Linear_Discriminant_Analysis(x_train,x_test,y_train,y_test)
-        #Quadratic_Discriminant_Analysis(x_train,x_test,y_train,y_test)
-        #Logistic_Regression(x_train,x_test,y_train,y_test)
-        #SupportVectorMachine(x_train, x_test, y_train, y_test)
-        print('\n\n')
-'''
 def get_features_with_class_labels(sign,sign_num):
     all_files = glob.glob("data/"+sign+"/*.csv")
     feature_matrix = pd.DataFrame()
@@ -421,23 +319,20 @@ def main():
         complete_feature_matrix = pd.concat([complete_feature_matrix,get_features_with_class_labels(i, sign_num)],ignore_index=True)
         sign_num = sign_num+1
     
-    #fm_after_normalization = PCA_fit(complete_feature_matrix.loc[:,complete_feature_matrix.columns!='class'],5)
-    #updated_complete_feature_matrix = DimensionalityReduction(fm_after_normalization,"PCA.pickle")
+#    fm_after_normalization = PCA_fit(complete_feature_matrix.loc[:,complete_feature_matrix.columns!='class'],5)
+#    updated_complete_feature_matrix = DimensionalityReduction(fm_after_normalization,"PCA.pickle")
     
     r, c = complete_feature_matrix.shape
 #   updated_complete_feature_matrix_not_sign =  updated_complete_feature_matrix - np.random.rand(r,c)
     
-    updated_complete_feature_matrix = pd.DataFrame(complete_feature_matrix)
-    updated_complete_feature_matrix['class'] = complete_feature_matrix['class'] 
+#    updated_complete_feature_matrix = pd.DataFrame(updated_complete_feature_matrix)
+#    updated_complete_feature_matrix['class'] = complete_feature_matrix['class'] 
     
 #    updated_complete_feature_matrix_not_sign = pd.DataFrame(updated_complete_feature_matrix_not_sign)
 #    updated_complete_feature_matrix_not_sign['class'] = 0
     
 #    appended_data = pd.concat([updated_complete_feature_matrix,updated_complete_feature_matrix_not_sign])
-    appended_data = updated_complete_feature_matrix
-#    print(appended_data)
-    
-#        
+    appended_data = complete_feature_matrix
     kf = KFold(5, True, 2)
 
     for train, test in kf.split(appended_data):
@@ -447,8 +342,8 @@ def main():
         y_train = tr_data['class']
         x_test = test_data.loc[:, tr_data.columns != 'class']
         y_test = test_data['class']    
-        Linear_Discriminant_Analysis(x_train,x_test,y_train,y_test)
-        print('\n\n')
+#        Linear_Discriminant_Analysis(x_train,x_test,y_train,y_test)
+#        print('\n\n')
 #        Quadratic_Discriminant_Analysis(x_train,x_test,y_train,y_test)
 #        print('\n\n')
 #        Logistic_Regression(x_train,x_test,y_train,y_test)
@@ -463,8 +358,8 @@ def main():
 #        print('\n\n')
 #        AdaBoost(x_train,x_test,y_train,y_test)
 #        print('\n\n')
-#        RandomForest(x_train,x_test,y_train,y_test)
-#        print('\n')
+        RandomForest(x_train,x_test,y_train,y_test)
+        print('\n')
 #        NaiveBayes_Classifier(x_train,x_test,y_train,y_test)
 #        print('\n')
     
