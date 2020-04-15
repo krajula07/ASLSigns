@@ -1,42 +1,41 @@
-import json
+import glob
 import numpy as np
-def method_name():
-    import pandas as pd
-    return pd
+import pandas as pd
+from numpy import genfromtxt
 
-pd = method_name()
+
+import random
+import csv
+import json
 import os
 
-path_to_videos = "C:/Users/rajul/OneDrive/Desktop/posenet_nodejs_setup-master/Videos/"
 
+# function to convert JSON input
+def convert(input_file):
+    headers = True
+    with open(input_file) as f:
+        reads = f.read()
+        j = json.loads(reads)
+        if os.path.exists('converted.csv'):
+            os.remove('converted.csv')
+        csv_file = open('converted.csv', 'a')
+        #print(j)
+        header = ['Frames#', 'score_overall']
+        for i in range(len(j)):
+            row = [i, j[i]["score"]]
 
-def convert_to_csv(path_to_video):
-    columns = ['score_overall', 'nose_score', 'nose_x', 'nose_y', 'leftEye_score', 'leftEye_x', 'leftEye_y',
-               'rightEye_score', 'rightEye_x', 'rightEye_y', 'leftEar_score', 'leftEar_x', 'leftEar_y',
-               'rightEar_score', 'rightEar_x', 'rightEar_y', 'leftShoulder_score', 'leftShoulder_x', 'leftShoulder_y',
-               'rightShoulder_score', 'rightShoulder_x', 'rightShoulder_y', 'leftElbow_score', 'leftElbow_x',
-               'leftElbow_y', 'rightElbow_score', 'rightElbow_x', 'rightElbow_y', 'leftWrist_score', 'leftWrist_x',
-               'leftWrist_y', 'rightWrist_score', 'rightWrist_x', 'rightWrist_y', 'leftHip_score', 'leftHip_x',
-               'leftHip_y', 'rightHip_score', 'rightHip_x', 'rightHip_y', 'leftKnee_score', 'leftKnee_x', 'leftKnee_y',
-               'rightKnee_score', 'rightKnee_x', 'rightKnee_y', 'leftAnkle_score', 'leftAnkle_x', 'leftAnkle_y',
-               'rightAnkle_score', 'rightAnkle_x', 'rightAnkle_y']
-    data = json.loads(open(path_to_video + 'key_points.json', 'r').read())
-    csv_data = np.zeros((len(data), len(columns)))
-    for i in range(csv_data.shape[0]):
-        one = []
-        one.append(data[i]['score'])
-        for obj in data[i]['keypoints']:
-            one.append(obj['score'])
-            one.append(obj['position']['x'])
-            one.append(obj['position']['y'])
-        csv_data[i] = np.array(one)
-    pd.DataFrame(csv_data, columns=columns).to_csv(path_to_video + 'key_points.csv', index_label='Frames#')
+            for k in j[i]['keypoints']:
+                col = ''
+                col = col + str(k['part'])
+                header.append(str(k['part']) + "_score")
+                row.append(k["score"])
+                for l in k['position']:
+                    header.append(col + "_" + l)
+                    row.append(k["position"][l])
 
-
-if __name__ == '__main__':
-
-    files = os.listdir(path_to_videos)
-    for file in files:
-        if not os.path.isdir(path_to_videos + file + "/"):
-            new_path = path_to_videos + os.path.splitext(file)[0] + "/"
-            convert_to_csv(new_path)
+            writer = csv.writer(csv_file)
+            if headers:
+                #print(header)
+                writer.writerow(header)
+                headers = False
+            writer.writerow(row)
