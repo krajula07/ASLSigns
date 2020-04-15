@@ -17,8 +17,8 @@ columns = ['score_overall', 'nose_score', 'nose_x', 'nose_y', 'leftEye_score', '
            'rightKnee_score', 'rightKnee_x', 'rightKnee_y', 'leftAnkle_score', 'leftAnkle_x', 'leftAnkle_y',
            'rightAnkle_score', 'rightAnkle_x', 'rightAnkle_y']
 
-get_list = {1: 'buy', 2: 'mother', 3: 'communicate',
-            4: 'really', 5: 'hope', 6: 'fun'}
+signnum_sign_dict = {1: 'buy', 2: 'mother', 3: 'communicate',
+                     4: 'really', 5: 'hope', 6: 'fun'}
 
 random_forest_model = pickle.load(open('random_forest.pkl', 'rb'))
 lda_model = pickle.load(open('lda.pkl', 'rb'))
@@ -27,21 +27,17 @@ gradient_boost_model = pickle.load(open('gradientboost.pkl', 'rb'))
 
 
 def json_to_dataframe(test_json):
-    all_frames = []
-    for i in range(len(test_json)):
-        temp = []
-        current_frame = test_json[i]
-        temp.append(current_frame['score'])
-        key_points = current_frame['keypoints']
-        for j in range(len(key_points)):
-            parts = key_points[j]
-            temp.append(parts['score'])
-            position = parts['position']
-            x, y = list(position.values())
-            temp.append(x)
-            temp.append(y)
-        all_frames.append(temp)
-    data_frame = pandas.DataFrame(all_frames, columns=columns)
+    data = request.json
+    dataframe_data = np.zeros((len(data), len(columns)))
+    for i in range(dataframe_data.shape[0]):
+        row = []
+        row.append(data[i]['score'])
+        for each_row in data[i]['keypoints']:
+            row.append(each_row['score'])
+            row.append(each_row['position']['x'])
+            row.append(each_row['position']['y'])
+        dataframe_data[i] = np.array(row)
+    data_frame = pd.DataFrame(dataframe_data, columns=columns)
     return data_frame
 
 
@@ -55,9 +51,9 @@ def test_predict():
     svm_model_predictions = svm_model.predict(features)
     gradient_boost_model_predictions = gradient_boost_model.predict(features)
 
-    output = {'1': get_list[random_forest_model_predictions[0]], '2': get_list[lda_model_predictions[0]],
-              '3': get_list[svm_model_predictions[0]], '4': get_list[gradient_boost_model_predictions[0]]}
-    return output
+    json_output = {'1': signnum_sign_dict.get(random_forest_model_predictions[0]), '2': signnum_sign_dict.get(lda_model_predictions[0]),
+                   '3': signnum_sign_dict.get(svm_model_predictions[0]), '4': signnum_sign_dict.get(gradient_boost_model_predictions[0])}
+    return json_output
 
 
 if __name__ == '__main__':
